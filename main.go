@@ -62,7 +62,7 @@ func main() {
 		} else {
 			s.Type = INCOME
 		}
-		if s.Type.IsValid() {
+		if !s.Type.IsValid() {
 			panic("Invalid spending type")
 		}
 	}
@@ -72,7 +72,7 @@ func main() {
 
 func writeSpending(spending []*Spending) {
 	url := "http://localhost:8086"
-	token := "riP4f-QJCLDEGVLn7SKy-OX0hlYkppbUSOgkHGG21S1QBbB9ij_XkAHPKyKj9LF06hzG37FpmiOshLomAxipPg=="
+	token := "eTjVDmFXk38b-6312uMIctjZGUnCuyil_hRQaioiP7HDOyXixL4pu_TEWVd5a_hhlP4rzE72WpsLAAabxmr2hQ=="
 	org := "15f0762da5e84762"
 	bucket := "financial"
 
