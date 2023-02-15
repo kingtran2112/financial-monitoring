@@ -60,12 +60,102 @@
   "liveNow": false,
   "panels": [
     {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "${DS_INFLUXDB}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "id": 17,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${DS_INFLUXDB}"
+          },
+          "query": "import \"join\"\n\nincome = from(bucket: \"financial\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r[\"_measurement\"] == \"Main Bank\")\n  |> filter(fn: (r) => r[\"_field\"] == \"amount\")\n  |> filter(fn: (r) => r[\"type\"] == \"INCOME\")\n  |> group(columns: [\"type\"])\n  |> aggregateWindow(every: 1mo, fn: sum, timeSrc: \"_start\", createEmpty: false)\n\nexpense = from(bucket: \"financial\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r[\"type\"] == \"EXPENSE\")\n  |> filter(fn: (r) => r[\"group\"] != \"Khoản chi khác\")\n  |> filter(fn: (r) => r[\"_field\"] == \"amount\")\n  |> group(columns: [\"type\"])\n  |> aggregateWindow(every: 1mo, fn: sum, timeSrc: \"_start\")\n\nunion(tables: [income, expense])\n  |> pivot(rowKey:[\"_time\"], columnKey: [\"type\"], valueColumn: \"_value\")\n  |> map(\n        fn: (r) => ({\n            _time: r._time,\n            _measurement: r._measurement,\n            _field: \"saving_percentage\",\n            _value: (float(v: r.INCOME) - float(v: r.EXPENSE)) / float(v: r.INCOME)\n        }),\n    )",
+          "refId": "A"
+        }
+      ],
+      "title": "Saving performance",
+      "type": "timeseries"
+    },
+    {
       "collapsed": false,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 0
+        "y": 8
       },
       "id": 7,
       "panels": [],
@@ -134,7 +224,7 @@
         "h": 9,
         "w": 12,
         "x": 0,
-        "y": 1
+        "y": 9
       },
       "id": 2,
       "options": {
@@ -227,7 +317,7 @@
         "h": 9,
         "w": 12,
         "x": 12,
-        "y": 1
+        "y": 9
       },
       "id": 3,
       "options": {
@@ -318,7 +408,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 10
+        "y": 18
       },
       "id": 13,
       "options": {
@@ -339,11 +429,101 @@
             "type": "influxdb",
             "uid": "${DS_INFLUXDB}"
           },
-          "query": "from(bucket: \"financial\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r[\"type\"] == \"EXPENSE\")\n  |> filter(fn: (r) => r[\"group\"] != \"Rút tiền\")\n  |> filter(fn: (r) => r[\"group\"] != \"Cho vay\")\n  |> filter(fn: (r) => r[\"_field\"] == \"amount\")\n  |> group()\n  |> window(every: 1mo)\n  |> group(columns: [\"group\", \"_start\"])\n  |> sum()\n  |> group(columns: [\"_start\"])\n  |> sort(desc: true)\n  |> limit(n: 5)\n  |> group(columns: [\"group\"])",
+          "query": "from(bucket: \"financial\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r[\"type\"] == \"EXPENSE\")\n  |> filter(fn: (r) => r[\"group\"] != \"Rút tiền\")\n  |> filter(fn: (r) => r[\"group\"] != \"Cho vay\")\n  |> filter(fn: (r) => r[\"group\"] != \"Khoản chi khác\")\n  |> filter(fn: (r) => r[\"_field\"] == \"amount\")\n  |> group()\n  |> window(every: 1mo)\n  |> group(columns: [\"group\", \"_start\"])\n  |> sum()\n  |> group(columns: [\"_start\"])\n  |> sort(desc: true)\n  |> limit(n: 5)\n  |> group(columns: [\"group\"])",
           "refId": "A"
         }
       ],
       "title": "Top 5 expenses each month",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "${DS_INFLUXDB}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "continuous-GrYlRd"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "gradientMode": "scheme",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "smooth",
+            "lineWidth": 3,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "currencyVND"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 18
+      },
+      "id": 15,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${DS_INFLUXDB}"
+          },
+          "query": "from(bucket: \"financial\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r[\"type\"] == \"EXPENSE\")\n  |> filter(fn: (r) => r[\"group\"] != \"Rút tiền\")\n  |> filter(fn: (r) => r[\"group\"] != \"Cho vay\")\n  |> filter(fn: (r) => r[\"group\"] != \"Khoản chi khác\")\n  |> filter(fn: (r) => r[\"_field\"] == \"amount\")\n  |> group(columns: [\"type\"])\n  |> aggregateWindow(every: 1mo, fn: sum, timeSrc: \"_start\")",
+          "refId": "A"
+        }
+      ],
+      "title": "Total expenses each month",
       "type": "timeseries"
     },
     {
@@ -352,7 +532,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 18
+        "y": 26
       },
       "id": 9,
       "panels": [
@@ -401,7 +581,8 @@
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green"
+                    "color": "green",
+                    "value": null
                   },
                   {
                     "color": "red",
@@ -417,7 +598,7 @@
             "h": 9,
             "w": 12,
             "x": 0,
-            "y": 19
+            "y": 27
           },
           "id": 4,
           "options": {
@@ -491,7 +672,8 @@
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green"
+                    "color": "green",
+                    "value": null
                   },
                   {
                     "color": "red",
@@ -507,7 +689,7 @@
             "h": 9,
             "w": 12,
             "x": 12,
-            "y": 19
+            "y": 27
           },
           "id": 5,
           "options": {
@@ -529,7 +711,7 @@
                 "type": "influxdb",
                 "uid": "${DS_INFLUXDB}"
               },
-              "query": "from(bucket: \"financial\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r[\"_measurement\"] == \"Main Bank\")\n  |> filter(fn: (r) => r[\"_field\"] == \"amount\")\n  |> filter(fn: (r) => r[\"type\"] == \"INCOME\")\n  |> filter(fn: (r) => r[\"group\"] != \"Đi vay\")\n  |> filter(fn: (r) => r[\"group\"] != \"Thu nợ\")\n  |> group(columns: [\"type\"])\n  |> aggregateWindow(every: 1mo, fn: sum, createEmpty: false)",
+              "query": "from(bucket: \"financial\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r[\"_measurement\"] == \"Main Bank\")\n  |> filter(fn: (r) => r[\"_field\"] == \"amount\")\n  |> filter(fn: (r) => r[\"type\"] == \"INCOME\")\n  |> filter(fn: (r) => r[\"group\"] != \"Đi vay\")\n  |> filter(fn: (r) => r[\"group\"] != \"Thu nợ\")\n  |> group(columns: [\"type\"])\n  |> aggregateWindow(every: 1mo, fn: sum, timeSrc: \"_start\", createEmpty: false)",
               "refId": "A"
             }
           ],
@@ -581,7 +763,8 @@
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green"
+                    "color": "green",
+                    "value": null
                   },
                   {
                     "color": "red",
@@ -597,7 +780,7 @@
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 28
+            "y": 36
           },
           "id": 11,
           "options": {
@@ -638,13 +821,13 @@
     "list": []
   },
   "time": {
-    "from": "now - 2y",
+    "from": "now -1y",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "",
   "title": "Financial",
   "uid": "lIXqa424k",
-  "version": 8,
+  "version": 12,
   "weekStart": ""
 }
