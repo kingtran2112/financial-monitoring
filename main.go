@@ -8,6 +8,7 @@ import (
 
 	"github.com/gocarina/gocsv"
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
+	influxApi "github.com/influxdata/influxdb-client-go/v2/api"
 )
 
 type Spending struct {
@@ -42,7 +43,29 @@ func (t SpendingType) String() string {
 }
 
 func main() {
-	f, err := os.Open("financial_report.csv")
+	url := "http://localhost:8086"
+	token := "eTjVDmFXk38b-6312uMIctjZGUnCuyil_hRQaioiP7HDOyXixL4pu_TEWVd5a_hhlP4rzE72WpsLAAabxmr2hQ=="
+	client, closer := initDB(url, token)
+	defer closer()
+
+	org := "15f0762da5e84762"
+	bucket := "financial"
+	writeAPI := client.WriteAPIBlocking(org, bucket)
+
+	spending := getDataFromFile("financial_report.csv")
+	writeSpending(writeAPI, spending)
+}
+
+func initDB(url string, token string) (influxdb2.Client, func()) {
+	client := influxdb2.NewClient(url, token)
+
+	return client, func() {
+		client.Close()
+	}
+}
+
+func getDataFromFile(fileName string) []*Spending {
+	f, err := os.Open(fileName)
 	if err != nil {
 		panic(err)
 	}
@@ -67,18 +90,10 @@ func main() {
 		}
 	}
 
-	writeSpending(spending)
+	return spending
 }
 
-func writeSpending(spending []*Spending) {
-	url := "http://localhost:8086"
-	token := "eTjVDmFXk38b-6312uMIctjZGUnCuyil_hRQaioiP7HDOyXixL4pu_TEWVd5a_hhlP4rzE72WpsLAAabxmr2hQ=="
-	org := "15f0762da5e84762"
-	bucket := "financial"
-
-	client := influxdb2.NewClient(url, token)
-	writeAPI := client.WriteAPIBlocking(org, bucket)
-
+func writeSpending(writeAPI influxApi.WriteAPIBlocking, spending []*Spending) {
 	for _, s := range spending {
 		fmt.Printf("Writing %s %s %s %s %d %s\n", s.Wallet, s.Date, s.Type, s.Group, s.Amount, s.Currency)
 		date, err := time.Parse("02/01/2006", s.Date)
@@ -99,6 +114,4 @@ func writeSpending(spending []*Spending) {
 	if err != nil {
 		panic(err)
 	}
-
-	client.Close()
 }
