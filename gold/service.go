@@ -2,6 +2,7 @@ package gold
 
 import (
 	"encoding/xml"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strconv"
@@ -35,17 +36,15 @@ type Item struct {
 	Type string `xml:"type,attr"`
 }
 
-type GoldService interface {
-	FetchGoldPrice() (int, error)
-}
-
 type goldService struct{}
 
 func (g *goldService) FetchGoldPrice() (int, error) {
+	fmt.Println("Fetching gold price!")
 	res, err := http.Get(GOLD_URL)
 	if err != nil {
 		return 0, err
 	}
+	fmt.Println("Fetching gold price successfully!")
 	resBody, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		return 0, err
@@ -68,6 +67,6 @@ func (g *goldService) FetchGoldPrice() (int, error) {
 	return result, nil
 }
 
-func NewService() GoldService {
+func NewService() *goldService {
 	return &goldService{}
 }
