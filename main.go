@@ -44,12 +44,12 @@ func (t SpendingType) String() string {
 
 func main() {
 	url := "http://localhost:8086"
-	token := "eTjVDmFXk38b-6312uMIctjZGUnCuyil_hRQaioiP7HDOyXixL4pu_TEWVd5a_hhlP4rzE72WpsLAAabxmr2hQ=="
+	token := "K3eRmCol-bR-gP6PspDxPhj9ZwmQZQetONjaA8nLWfPDyM8dHQfjbba1PjBQ-2oAFJdlGf1ai7AKML3d845zow=="
 	client, closer := initDB(url, token)
 	defer closer()
 
-	org := "15f0762da5e84762"
-	bucket := "financial"
+	org := "f25a23958d7394f3"
+	bucket := "Financial"
 	writeAPI := client.WriteAPIBlocking(org, bucket)
 
 	spending := getDataFromFile("financial_report.csv")
