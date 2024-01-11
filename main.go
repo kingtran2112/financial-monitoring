@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"financial-monitoring/db"
 	"financial-monitoring/gold"
+	"financial-monitoring/importing"
 	"fmt"
 	"os"
 	"os/signal"
@@ -11,14 +13,19 @@ import (
 )
 
 func main() {
-	// goldService := gold.NewService()
-	// price, err := goldService.FetchGoldPrice()
-	// if err != nil {
-	// 	fmt.Printf("Error: %v", err)
-	// }
-	// fmt.Printf("Current gold price: %d", price)
+	// TODO: These information should be imported from env
+	// TODO: Create a flag for importing function
+	url := "http://localhost:8086"
+	token := "eTjVDmFXk38b-6312uMIctjZGUnCuyil_hRQaioiP7HDOyXixL4pu_TEWVd5a_hhlP4rzE72WpsLAAabxmr2hQ=="
+	org := "15f0762da5e84762"
+	bucket := "financial"
 
-	// panic("Implementing!!!!")
+	influxClient := db.NewInfluxClient(url, token, org, bucket)
+	defer influxClient.Close()
+	importingService := importing.NewService(influxClient)
+
+	importingService.Import("financial_report.csv")
+
 	s, err := gocron.NewScheduler(
 		gocron.WithLogger(
 			gocron.NewLogger(gocron.LogLevelDebug),

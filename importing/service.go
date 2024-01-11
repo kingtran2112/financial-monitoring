@@ -1,14 +1,15 @@
 package importing
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"time"
 
 	"github.com/gocarina/gocsv"
+
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
-	influxApi "github.com/influxdata/influxdb-client-go/v2/api"
+
+	"github.com/influxdata/influxdb-client-go/v2/api/write"
 )
 
 type Spending struct {
@@ -42,35 +43,24 @@ func (t SpendingType) String() string {
 	return string(t)
 }
 
-func Import() {
-	url := "http://localhost:8086"
-	token := "eTjVDmFXk38b-6312uMIctjZGUnCuyil_hRQaioiP7HDOyXixL4pu_TEWVd5a_hhlP4rzE72WpsLAAabxmr2hQ=="
-	client, closer := initDB(url, token)
-	defer closer()
-
-	org := "15f0762da5e84762"
-	bucket := "financial"
-	writeAPI := client.WriteAPIBlocking(org, bucket)
-
-	spending := getDataFromFile("financial_report.csv")
-	writeSpending(writeAPI, spending)
+type influxClient interface {
+	WritePoint(p *write.Point) error
+}
+type importingService struct {
+	influx influxClient
 }
 
-func initDB(url string, token string) (influxdb2.Client, func()) {
-	client := influxdb2.NewClient(url, token)
-
-	return client, func() {
-		client.Close()
-	}
+func (is *importingService) Import(path string) {
+	spending := is.getDataFromFile(path)
+	is.writeSpending(spending)
 }
 
-func getDataFromFile(fileName string) []*Spending {
+func (is *importingService) getDataFromFile(fileName string) []*Spending {
 	f, err := os.Open(fileName)
+	defer f.Close()
 	if err != nil {
 		panic(err)
 	}
-
-	defer f.Close()
 
 	var spending []*Spending
 
@@ -93,25 +83,30 @@ func getDataFromFile(fileName string) []*Spending {
 	return spending
 }
 
-func writeSpending(writeAPI influxApi.WriteAPIBlocking, spending []*Spending) {
+func (is *importingService) writeSpending(spending []*Spending) {
 	for _, s := range spending {
-		fmt.Printf("Writing %s %s %s %s %d %s\n", s.Wallet, s.Date, s.Type, s.Group, s.Amount, s.Currency)
-		date, err := time.Parse("02/01/2006", s.Date)
-		if err != nil {
-			panic(err)
-		}
-		p := influxdb2.NewPoint(s.Wallet,
-			map[string]string{"group": s.Group, "type": s.Type.String()},
-			map[string]interface{}{"amount": s.Amount, "currency": s.Currency, "note": s.Note},
-			date)
-		err = writeAPI.WritePoint(context.Background(), p)
+		p := is.spendingToPoint(s)
+		err := is.influx.WritePoint(p)
 		if err != nil {
 			panic(err)
 		}
 	}
+}
 
-	err := writeAPI.Flush(context.Background())
+func (is *importingService) spendingToPoint(s *Spending) *write.Point {
+	fmt.Printf("Writing %s %s %s %s %d %s\n", s.Wallet, s.Date, s.Type, s.Group, s.Amount, s.Currency)
+	date, err := time.Parse("02/01/2006", s.Date)
 	if err != nil {
 		panic(err)
+	}
+	return influxdb2.NewPoint(s.Wallet,
+		map[string]string{"group": s.Group, "type": s.Type.String()},
+		map[string]interface{}{"amount": s.Amount, "currency": s.Currency, "note": s.Note},
+		date)
+}
+
+func NewService(influxClient influxClient) *importingService {
+	return &importingService{
+		influx: influxClient,
 	}
 }
