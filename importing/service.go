@@ -46,6 +46,7 @@ func (t SpendingType) String() string {
 type influxClient interface {
 	WritePoint(p *write.Point) error
 }
+
 type importingService struct {
 	influx influxClient
 }

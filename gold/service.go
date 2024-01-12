@@ -7,6 +7,10 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
+
+	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
+	"github.com/influxdata/influxdb-client-go/v2/api/write"
 )
 
 const GOLD_URL = "https://sjc.com.vn/xml/tygiavang.xml"
@@ -36,7 +40,13 @@ type Item struct {
 	Type string `xml:"type,attr"`
 }
 
-type goldService struct{}
+type influxClient interface {
+	WritePoint(p *write.Point) error
+}
+
+type goldService struct {
+	influx influxClient
+}
 
 func (g *goldService) FetchGoldPrice() (int, error) {
 	fmt.Println("Fetching gold price!")
@@ -65,6 +75,18 @@ func (g *goldService) FetchGoldPrice() (int, error) {
 	}
 
 	return result, nil
+}
+
+func (g *goldService) AddGoldPrice(price int) (int, error) {
+	fmt.Println("Adding gold price!")
+	point := influxdb2.NewPoint("Gold",
+		map[string]string{"type": "price"},
+		map[string]interface{}{"price": price}, time.Now())
+	err := g.influx.WritePoint(point)
+	if err != nil {
+		return 0, err
+	}
+	return price, nil
 }
 
 func NewService() *goldService {
