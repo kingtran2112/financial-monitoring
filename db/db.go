@@ -37,7 +37,10 @@ func (influx *InfluxClient) WritePoint(point *write.Point) error {
 }
 
 func (influx *InfluxClient) Close() {
-	client.Close()
+	if client != nil {
+		client.Close()
+		client = nil
+	}
 }
 
 func NewInfluxClient(url string, token string, org string, bucket string) *InfluxClient {

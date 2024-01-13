@@ -17,7 +17,7 @@ func main() {
 	// TODO: Create a flag for importing function
 	url := "http://localhost:8086"
 	token := "eTjVDmFXk38b-6312uMIctjZGUnCuyil_hRQaioiP7HDOyXixL4pu_TEWVd5a_hhlP4rzE72WpsLAAabxmr2hQ=="
-	org := "15f0762da5e84762"
+	org := "my-org"
 	bucket := "financial"
 
 	influxClient := db.NewInfluxClient(url, token, org, bucket)

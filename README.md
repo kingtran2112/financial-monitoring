@@ -17,10 +17,16 @@ docker run -d --name=grafana -p 3000:3000 grafana/grafana
   Start influxDB by docker. Run command:
 
 ```bash
-docker run \
-      -p 8086:8086 \
-      -v myInfluxVolume:/var/lib/influxdb2 \
-      influxdb:latest
+docker run -d -p 8086:8086 \
+      -v $PWD/data:/var/lib/influxdb2 \
+      -v $PWD/config:/etc/influxdb2 \
+      -e DOCKER_INFLUXDB_INIT_MODE=setup \
+      -e DOCKER_INFLUXDB_INIT_USERNAME=admin \
+      -e DOCKER_INFLUXDB_INIT_PASSWORD=admin1234 \
+      -e DOCKER_INFLUXDB_INIT_ORG=my-org \
+      -e DOCKER_INFLUXDB_INIT_BUCKET=financial \
+      -e DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=eTjVDmFXk38b-6312uMIctjZGUnCuyil_hRQaioiP7HDOyXixL4pu_TEWVd5a_hhlP4rzE72WpsLAAabxmr2hQ== \
+      influxdb:2.7
 ```
 
 ### Import data to InfluxDB
@@ -41,7 +47,7 @@ go run .
 
 ### Showing data by grafana dashboard
 
-Go to grafana dashboard `http://localhost:3000` and create a new data source for influx db.
+Go to grafana dashboard `http://localhost:3000`, the default credential is admin/admin. Creating a new data source for influx db.
 Put the influx DB URL to URL field (Please note that we are running on docker so it may not localhost, we can get the IP of docker bridge to connect 2 applications).
 Choose Flux on Query language field and put value for Organization, token(with read access) and default bucket ![create data source](./docs/create_data_source.jpg)
 Import dashboard by click import ![import dashboard](./docs/import_dashboard.jpg) and choose the file in [grafana-dashboard](./grafana-dashboard/)
