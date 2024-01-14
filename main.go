@@ -4,7 +4,6 @@ import (
 	"context"
 	"financial-monitoring/db"
 	"financial-monitoring/gold"
-	"financial-monitoring/importing"
 	"fmt"
 	"os"
 	"os/signal"
@@ -22,9 +21,9 @@ func main() {
 
 	influxClient := db.NewInfluxClient(url, token, org, bucket)
 	defer influxClient.Close()
-	importingService := importing.NewService(influxClient)
+	// importingService := importing.NewService(influxClient)
 
-	importingService.Import("financial_report.csv")
+	// importingService.Import("financial_report.csv")
 
 	s, err := gocron.NewScheduler(
 		gocron.WithLogger(
@@ -38,7 +37,7 @@ func main() {
 		fmt.Printf("Error in main: %v", err)
 		panic(err)
 	}
-	goldService := gold.NewService()
+	goldService := gold.NewService(influxClient)
 	goldJob := gold.NewJob(s, goldService)
 	goldJob.AddGoldPrice()
 

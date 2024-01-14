@@ -73,8 +73,8 @@ func (g *goldService) FetchGoldPrice() (int, error) {
 	if err != nil {
 		return 0, err
 	}
-
-	return result, nil
+	// The XML data return the price with the thousand unit
+	return result * 1000, nil
 }
 
 func (g *goldService) AddGoldPrice(price int) (int, error) {
@@ -86,9 +86,10 @@ func (g *goldService) AddGoldPrice(price int) (int, error) {
 	if err != nil {
 		return 0, err
 	}
+	fmt.Println("Adding gold price successfully!")
 	return price, nil
 }
 
-func NewService() *goldService {
-	return &goldService{}
+func NewService(influxClient influxClient) *goldService {
+	return &goldService{influx: influxClient}
 }
