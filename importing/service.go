@@ -56,10 +56,10 @@ func (is *importingService) Import(path string) {
 
 func (is *importingService) getDataFromFile(fileName string) []*Spending {
 	f, err := os.Open(fileName)
-	defer f.Close()
 	if err != nil {
 		panic(err)
 	}
+	defer f.Close()
 
 	var spending []*Spending
 
@@ -85,8 +85,7 @@ func (is *importingService) getDataFromFile(fileName string) []*Spending {
 func (is *importingService) writeSpending(spending []*Spending) {
 	for _, s := range spending {
 		p := is.spendingToPoint(s)
-		err := is.influx.WritePoint(p)
-		if err != nil {
+		if err := is.influx.WritePoint(p); err != nil {
 			panic(err)
 		}
 	}
@@ -98,10 +97,12 @@ func (is *importingService) spendingToPoint(s *Spending) *write.Point {
 	if err != nil {
 		panic(err)
 	}
-	return influxdb2.NewPoint(s.Wallet,
+	return influxdb2.NewPoint(
+		s.Wallet,
 		map[string]string{"group": s.Group, "type": s.Type.String()},
 		map[string]interface{}{"amount": s.Amount, "currency": s.Currency, "note": s.Note},
-		date)
+		date,
+	)
 }
 
 func NewService(influxClient influxClient) *importingService {
