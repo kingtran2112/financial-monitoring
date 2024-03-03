@@ -2,13 +2,14 @@ package main
 
 import (
 	"context"
-	"financial-monitoring/db"
-	"financial-monitoring/gold"
-	"fmt"
+	"log"
 	"os"
 	"os/signal"
 
 	"github.com/go-co-op/gocron/v2"
+
+	"financial-monitoring/db"
+	"financial-monitoring/gold"
 )
 
 func main() {
@@ -30,18 +31,22 @@ func main() {
 			gocron.NewLogger(gocron.LogLevelDebug),
 		),
 	)
-	s.Start()
-	defer s.Shutdown()
-
 	if err != nil {
-		fmt.Printf("Error in main: %v", err)
-		panic(err)
+		log.Fatalf("new scheduler: %s\n", err)
 	}
+
+	s.Start()
+	defer func() {
+		if err := s.Shutdown(); err != nil {
+			log.Printf("shutdown scheduler: %s\n", err)
+		}
+	}()
+
 	goldService := gold.NewService(influxClient)
 	goldJob := gold.NewJob(s, goldService)
 	goldJob.AddGoldPrice()
 
-	// Keep the application keep running
+	// Keep the application running
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
 

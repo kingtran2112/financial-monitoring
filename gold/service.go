@@ -3,7 +3,7 @@ package gold
 import (
 	"encoding/xml"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -55,14 +55,13 @@ func (g *goldService) FetchGoldPrice() (int, error) {
 		return 0, err
 	}
 	fmt.Println("Fetching gold price successfully!")
-	resBody, err := ioutil.ReadAll(res.Body)
+	resBody, err := io.ReadAll(res.Body)
 	if err != nil {
 		return 0, err
 	}
 
 	var goldData *GoldRoot
-	err = xml.Unmarshal(resBody, &goldData)
-	if err != nil {
+	if err := xml.Unmarshal(resBody, &goldData); err != nil {
 		return 0, err
 	}
 
@@ -79,11 +78,12 @@ func (g *goldService) FetchGoldPrice() (int, error) {
 
 func (g *goldService) AddGoldPrice(price int) (int, error) {
 	fmt.Println("Adding gold price!")
-	point := influxdb2.NewPoint("Gold",
+	point := influxdb2.NewPoint(
+		"Gold",
 		map[string]string{"type": "price"},
-		map[string]interface{}{"price": price}, time.Now())
-	err := g.influx.WritePoint(point)
-	if err != nil {
+		map[string]interface{}{"price": price}, time.Now(),
+	)
+	if err := g.influx.WritePoint(point); err != nil {
 		return 0, err
 	}
 	fmt.Println("Adding gold price successfully!")

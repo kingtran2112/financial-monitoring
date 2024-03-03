@@ -38,6 +38,5 @@ func (gj *GoldJob) AddGoldPrice() error {
 	if err != nil {
 		return err
 	}
-	j.RunNow()
-	return nil
+	return j.RunNow()
 }
