@@ -3,7 +3,7 @@ package gold
 import (
 	"encoding/xml"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -55,7 +55,7 @@ func (g *goldService) FetchGoldPrice() (int, error) {
 		return 0, err
 	}
 	fmt.Println("Fetching gold price successfully!")
-	resBody, err := ioutil.ReadAll(res.Body)
+	resBody, err := io.ReadAll(res.Body)
 	if err != nil {
 		return 0, err
 	}
