@@ -6,9 +6,7 @@ import (
 	"time"
 
 	"github.com/gocarina/gocsv"
-
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
-
 	"github.com/influxdata/influxdb-client-go/v2/api/write"
 )
 

@@ -2,13 +2,14 @@ package main
 
 import (
 	"context"
-	"financial-monitoring/db"
-	"financial-monitoring/gold"
 	"fmt"
 	"os"
 	"os/signal"
 
 	"github.com/go-co-op/gocron/v2"
+
+	"financial-monitoring/db"
+	"financial-monitoring/gold"
 )
 
 func main() {
